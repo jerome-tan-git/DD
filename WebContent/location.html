@@ -1,0 +1,287 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-
+transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<script type="text/javascript" src="jquery.min.js"></script>
+<script type="text/javascript" src="jquery-ui-1.10.3.custom.min.js"></script>
+<script type="text/javascript" src="UUID.js"></script>
+<link rel="stylesheet" type="text/css" href="./bootstrap.min.css" />
+<style>
+.block {
+	border: 1px solid #ccc;
+	float: left;
+	background-color: #eee;
+}
+
+.block>div {
+	padding: 10px;
+	font-size: 25pt;
+	font-style: italic;
+	color: gray;
+}
+
+.outer {
+	width: 800px;
+	border: 1px solid #cc0000;
+	margin: 0 auto;
+	margin-top:30px !important;
+}
+
+.clearfix {
+	*zoom: 1;
+}
+
+.clearfix:before,.clearfix:after {
+	display: table;
+	line-height: 0;
+	content: "";
+}
+
+.clearfix:after {
+	clear: both;
+}
+</style>
+<script>
+		var jsonStr = "";
+			// consturct info
+			//var construction = {"blocks":[{"childObjs":[{"childObjs":[],"col":12,"content":"My Test<br /><br /><br /><br /><br />","identifier":"f4a75b30-caf2-4075-9925-f7e15844c3ec","type":"colObj"}],"col":0,"type":"rowObj"},{"childObjs":[{"childObjs":[],"col":12,"content":"My Test_a","identifier":"af7c5c5b-ed58-4486-8660-98e6279b6cb5","type":"colObj"}],"col":0,"type":"rowObj"},{"childObjs":[{"childObjs":[],"col":12,"content":"aaaaaaaaaaaaa","identifier":"7c9fc65c-8fbf-425a-8956-c1121149ba68","type":"colObj"}],"col":0,"type":"rowObj"},{"childObjs":[{"childObjs":[],"col":12,"content":"bbbbb","identifier":"6baaf7cd-9695-42f3-abd9-3b968701edcf","type":"colObj"}],"col":0,"type":"rowObj"},{"childObjs":[{"childObjs":[],"col":12,"content":"xxxxx","identifier":"2efd7d14-dcd1-4b2a-b223-b8a3e2a1495c","type":"colObj"}],"col":0,"type":"rowObj"},{"childObjs":[{"childObjs":[],"col":12,"content":"yyyyyyy","identifier":"343b3278-e17f-4daa-9dbf-e873a50727d3","type":"colObj"}],"col":0,"type":"rowObj"},{"childObjs":[{"childObjs":[],"col":12,"content":"GO1","identifier":"6396eb00-a724-48d3-bebc-f4bb22cafb3f","type":"colObj"}],"col":0,"type":"rowObj"},{"childObjs":[{"childObjs":[],"col":12,"content":"GO2","identifier":"b9cb377d-4c65-477c-8789-6b51c01c2d61","type":"colObj"}],"col":0,"type":"rowObj"}]};
+			var targetObj = null;
+			var threshold = 40;
+			var horizontalLines = new Array();
+			var verticalLines = new Array();
+			function blockBorder_horizontal(_fromX, _toX, _y, _blockIndex, _linePos) {
+				this.fromX = _fromX;
+				this.toX = _toX;
+				this.y = _y;
+				this.blockIndex = _blockIndex;
+				this.linePos = _linePos;
+			}
+
+			function blockBorder_vertical(_fromY, _toY, _x, _blockIndex, _linePos) {
+				this.fromY = _fromY;
+				this.toY = _toY;
+				this.x = _x;
+				this.blockIndex = _blockIndex;
+				this.linePos = _linePos;
+			}
+
+			function constructLines(_x, _y, _height, _width, _blockIndex) {
+				var leftBorder = new blockBorder_vertical(_y, _y + _height, _x + 1, _blockIndex, "left");
+				var rightBorder = new blockBorder_vertical(_y, _y + _height, _x - 1 + _width, _blockIndex, "right");
+				verticalLines.push(leftBorder, rightBorder);
+
+				var topBorder = new blockBorder_horizontal(_x, _x + _width, _y + 1, _blockIndex, "top");
+				var bottomBorder = new blockBorder_horizontal(_x, _x + _width, _y - 1 + _height, _blockIndex, "bottom");
+				horizontalLines.push(topBorder, bottomBorder);
+
+			}
+
+			function judgeEdge(_x, _y) {
+				var minHorizontalObj = null;
+				var minHorizontalDis = 99999;
+
+				var minVerticalObj = null;
+				var minVerticalDis = 99999;
+				var resultDis = 9999;
+				var resultObj = null;
+				for (var i = 0; i < verticalLines.length; i++) {
+					if (minVerticalDis > (Math.abs(verticalLines[i].x - _x))) {
+
+						if (_y > verticalLines[i].fromY && _y < verticalLines[i].toY) {
+							//console.log(_y + " | "+verticalLines[i].fromY + " , " + verticalLines[i].toY);
+							minVerticalDis = Math.abs(verticalLines[i].x - _x);
+							minVerticalObj = verticalLines[i];
+						}
+					}
+				}
+
+				for (var i = 0; i < horizontalLines.length; i++) {
+
+					if (minHorizontalDis > (Math.abs(horizontalLines[i].y - _y))) {
+						//console.log(_x + " | "+horizontalLines[i].fromX + " , " + horizontalLines[i].toX);
+						if (_x > horizontalLines[i].fromX && _x < horizontalLines[i].toX) {
+							//console.log(minHorizontalDis + " | "+Math.abs(horizontalLines[i].y-_y));
+							minHorizontalDis = Math.abs(horizontalLines[i].y - _y);
+							minHorizontalObj = horizontalLines[i];
+						}
+					}
+				}
+				//console.log(minHorizontalObj +" | "+ minHorizontalDis +" , "+ minVerticalObj +" | "+ minVerticalDis);
+				if (minHorizontalObj && minVerticalObj) {
+					if (minHorizontalDis > minVerticalDis) {
+						resultObj = minVerticalObj;
+						resultDis = minVerticalDis;
+					} else {
+						resultObj = minHorizontalObj;
+						resultDis = minHorizontalDis;
+					}
+				} else if (minHorizontalObj) {
+					resultObj = minHorizontalObj;
+					resultDis = minHorizontalDis;
+				} else if (minVerticalObj) {
+					resultObj = minVerticalObj;
+					resultDis = minVerticalDis;
+				}
+				if (resultDis > threshold) {
+					return null;
+				}
+
+				return resultObj;
+			}
+
+			
+
+			function attachDragAction() {
+				$(".block").draggable({
+					zIndex : 2500,
+					opacity : 0.7,
+					cursor : "move",
+					start : function(event) {
+						horizontalLines.length = 0;
+						verticalLines.length = 0;
+						var dragObjID = $(this).attr("identifier");
+
+						$(".block").each(function() {
+							var p = $(this).offset();
+							var h = $(this).outerHeight();
+							var w = $(this).outerWidth();
+
+							var blockIndex = $(this).attr("identifier");
+
+							if (blockIndex != dragObjID) {
+								constructLines(p.left, p.top, h, w, blockIndex);
+
+							}
+						});
+
+					},
+					drag : function(event) {
+						targetObj = judgeEdge(event.pageX, event.pageY);
+						$(".block").each(function() {
+							$(this).css("border", "1px solid #ccc");
+						});
+						
+						if (targetObj) {
+							$(".block[identifier='" + targetObj.blockIndex + "']").css("border-" + targetObj.linePos, "1px solid blue");
+						}
+
+					},
+					stop : function() {
+						if(targetObj)
+						{
+						var blockIndex = $(this).attr("identifier");
+						var targetObjID = targetObj.blockIndex;
+						var targetObjPosition = targetObj.linePos;
+						$.post("./UpdateBlock", {json:jsonStr, srcID: blockIndex, targetID: targetObjID, targetPosition: targetObjPosition}, function(data, textStatus) {
+							$("#container").html("");
+							refreshBlocks(data);
+							  //data contains the JSON object
+							  //textStatus contains the status: success, error, etc
+							}, "json");
+						}
+						//$.getJSON("./UpdateBlock", {json:jsonStr}, function(json){});
+					}
+				});
+			}
+			function fillAllWidth()
+			{
+				$(".block").each(function()
+				{
+					var parentWidth =  $(this).parent().width();
+					$(this).width(parentWidth);
+					
+				});
+			}
+			$($.getJSON( "./InitBlock", function(data) {
+				refreshBlocks(data);
+			}));
+
+
+			function refreshBlocks(obj)
+			{
+				var blockLen = obj.blocks.length;
+				for (var i = 0; i < obj.blocks.length; i++) {
+					constructBlocks($("#container"), obj.blocks[i]);
+				}
+				fillAllWidth();
+				attachDragAction();
+				jsonStr= JSON.stringify(obj);
+			}
+			function constructBlocks(doc, obj) {
+				if (obj.type == "rowObj") {
+					var newdiv2 = $("<div class=\"row bord\"></div>");
+					doc.append(newdiv2);
+					var childElement = obj.childObjs;
+					if (childElement) {
+						var childLen = childElement.length;
+						for (var j = 0; j < childLen; j++) {
+							constructBlocks(newdiv2, childElement[j]);
+						}
+					}
+				} else if (obj.type == "colObj") {
+					var width = obj.col;
+					var content = "";
+					if (obj.content) {
+						content = obj.content;
+					}
+					var childElement = obj.childObjs;
+					var newCol = null;
+					
+					if(childElement.length>0)
+					{
+						newCol = $("<div class=\"col-md-" + width + " bord\"></div>");
+						doc.append(newCol);
+					}
+					else
+					{
+						newCol = $("<div class=\"col-md-" + width + " bord\"><div class=\"block\" identifier=\""+obj.identifier+"\">" + content + "</div></div>");
+						doc.append(newCol);
+					}
+					
+					
+					if (childElement) {
+						var childLen = childElement.length;
+						for (var j = 0; j < childLen; j++) {
+							constructBlocks(newCol, childElement[j]);
+						}
+					}
+				}
+
+			}
+
+		</script>
+</head>
+<body>
+	<div class="outer clearfix" id="container" style="margin: 0 auto;">
+
+		<!--
+			<div class="block" style="	width: 600px;height: 300px;
+			">
+			<div>1</div>
+			</div>
+			<div class="block" style="	width: 100px;height: 100px;
+			">
+			<div>2</div>
+			</div>
+			<div class="block" style="	width: 94px;">
+			<div>3</div>
+			</div>
+			<div class="block" style="	width: 400px;height: 300px;">
+			<div>4</div>
+			</div>
+			<div class="block" style="	width: 396px;height: 100px;">
+			<div>5</div>
+			</div>
+			<div class="block" style="	width: 250px;height: 250px;">
+			<div>6</div>
+			</div>
+			<div class="block" style="	width: 144px;height: 100px;">
+			<div>7</div>
+			</div>
+			<div class="block" style="	width: 798px;height: 100px;">
+			<div>8</div>
+			</div>
+			-->
+	</div>
+</body>
+</html>
